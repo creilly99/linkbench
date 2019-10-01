@@ -1,4 +1,7 @@
 /*
+ * Modified by Christine F. Reilly, Skidmore College
+ * Added information for use with the GraphMore project
+ *
  * Copyright 2012, Facebook, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -144,4 +147,7 @@ public class Config {
   /* External data */
   public static final String DISTRIBUTION_DATA_FILE = "data_file";
   public static final String WORKLOAD_CONFIG_FILE = "workload_file";
+
+  /* Additions by Christine F. Reilly, Skidmore College */
+  public static final String DBINFO = "dbinfo";
 }

@@ -63,6 +63,11 @@ fi
 CLASSPATH="${CONF_DIR}"
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
+#cfr add path to GraphMore jar; must be changed for every local machine!
+# This is the hack for development, once GraphMore is released it will be
+# better incorporated by maven
+CLASSPATH=${CLASSPATH}:/Users/creilly/Documents/research/git-repo/netsim/code/GraphMore/dist/lib/GraphMore_0.1.8.jar
+
 # so that filenames w/ spaces are handled correctly in loops below
 IFS=
 

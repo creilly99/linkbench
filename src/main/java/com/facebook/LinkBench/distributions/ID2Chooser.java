@@ -1,4 +1,8 @@
 /*
+ * Modified by Christine F. Reilly, Skidmore College
+ * Changed range of generated id2 in the case that id2max configuration value is non-zero.
+ * Now will return random value between 1 and id2max INCLUSIVE.
+ *
  * Copyright 2012, Facebook, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -99,7 +103,11 @@ public class ID2Chooser {
     if (randomid2max == 0) {
       return id1 + outlink_ix;
     } else {
-      return rng.nextInt((int)randomid2max);
+      //cfr return rng.nextInt((int)randomid2max);
+      //cfr The id2 must begin at 1 because minimum node id is 1
+      //cfr changing to add 1 to the randomly generated number
+      //cfr This will now return a value between 1 and randomid2max INCLUSIVE
+      return rng.nextInt((int)randomid2max) + 1;
     }
   }
 
@@ -191,7 +199,9 @@ public class ID2Chooser {
     if (randomid2max == 0) {
       id2 = id1 + rng.nextInt((int)range);
     } else {
-      id2 = rng.nextInt((int)randomid2max);
+      //cfr id2 = rng.nextInt((int)randomid2max);
+      //cfr changed to return from 1 to randomid2max INCLUSIVE
+      id2 = rng.nextInt((int)randomid2max) + 1;
     }
 
     if (id2gen_config == 1) {

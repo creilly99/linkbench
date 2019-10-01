@@ -70,25 +70,14 @@
             <version>1.5.8</version>
         </dependency>
         <dependency>
-          <!-- Christine F. Reilly, Skidmore College: changed from MySQL to MariaDB -->
-            <groupId>org.mariadb.jdbc</groupId>
-            <artifactId>mariadb-java-client</artifactId>
-            <version>2.4.4</version>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>5.1.44</version>
         </dependency>
         <dependency>
           <groupId>org.postgresql</groupId>
           <artifactId>postgresql</artifactId>
           <version>9.4.1211</version>
-        </dependency>
-        <dependency>
-          <!-- Christine F. Reilly, Skidmore College: added for GraphMore;
-          each user must specify their specific path; after GraphMore code
-          is publically released, this can be updated to a general location -->
-          <groupId>edu.skidmore.graphmore</groupId>
-          <artifactId>mariadb</artifactId>
-          <version>0.1.5</version>
-          <scope>system</scope>
-          <systemPath>/Users/creilly/Documents/research/git-repo/netsim/code/GraphMore/dist/lib/GraphMore_0.1.8.jar</systemPath>
         </dependency>
 
     </dependencies>

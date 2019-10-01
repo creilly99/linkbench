@@ -1,4 +1,8 @@
 /*
+ * Modified by Christine F. Reilly, Skidmore College
+ * Load nodes before links (not as parallel threads).
+ * GraphMore requires the node ids in links to exist.
+ *
  * Copyright 2012, Facebook, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -241,8 +245,17 @@ public class LinkBenchDriver {
       int loaderId = nTotalLoaders - 1;
       NodeStore nodeStore = createNodeStore(null);
       Random rng = new Random(masterRandom.nextLong());
-      loaders.add(new NodeLoader(props, logger, nodeStore, rng,
-          latencyStats, csvStreamFile, loaderId));
+
+      //cfr Load nodes before links for GraphMore
+      List<Runnable> nodeLoad = new ArrayList<Runnable>(1);
+      nodeLoad.add(new NodeLoader(props, logger, nodeStore, rng,
+         latencyStats, csvStreamFile, loaderId));
+      long nodeLoadTime = concurrentExec(nodeLoad);
+      logger.info("Load node time: " + nodeLoadTime);
+
+      // original code
+      //loaders.add(new NodeLoader(props, logger, nodeStore, rng,
+      //    latencyStats, csvStreamFile, loaderId));
     }
     enqueueLoadWork(chunk_q_list, startid1, maxid1, nLinkLoaders,
                     new Random(masterRandom.nextLong()));
@@ -436,6 +449,7 @@ public class LinkBenchDriver {
         }
       }).start();
     }
+    System.out.println("[CFR] going to wait for all threads to finish");
     doneSignal.await(); // wait for all threads to finish
     long endTime = System.currentTimeMillis();
     return endTime - startTime.get();
@@ -595,5 +609,3 @@ public class LinkBenchDriver {
     }
   }
 }
-
-
