@@ -37,8 +37,18 @@ public class LinkStoreMariaDB extends GraphStore {
   /** Label in the Properties object for the database information file */
   public static final String CONFIG_DBINFO = "dbinfo";
 
+  /** Label in the Properties object for bulk insert batch size */
+  public static final String CONFIG_BULK_INSERT_BATCH = "mariadb_bulk_insert_batch";
+
+
+  /** Default number of items for bulk inserts */
+  public static final int DEFAULT_BULKINSERT_SIZE = 1024;
+
   /** Object that represents the graph storage system */
   private GraphMoreMariaDB graphDB;
+
+  /** Number of items for bulk inserts */
+  private int bulkInsertSize = DEFAULT_BULKINSERT_SIZE;
 
   /**
   * Default constructor
@@ -69,6 +79,12 @@ public class LinkStoreMariaDB extends GraphStore {
 
     // Create the GraphMoreMariaDB object
     graphDB = new GraphMoreMariaDB(infoFile);
+
+    // Set bulk insert batch size based on configuration file;
+    // If this property is included in the configuration file.
+    if (props.containsKey(CONFIG_BULK_INSERT_BATCH)) {
+      bulkInsertSize = ConfigUtil.getInt(props, CONFIG_BULK_INSERT_BATCH);
+    }
   }
 
   /**
@@ -209,17 +225,23 @@ public class LinkStoreMariaDB extends GraphStore {
    *
    * Overrides method from LinkStore. Modeled after LinkStoreMysql.
    *
+   * LinkStoreMysql returns in descending order of time; this method does
+   * not guarantee an order.
+   *
    * @param dbid
    * @param id1
    * @param link_type
-   * @return list of links in descending order of time, or null
-   *                                       if no matching links
+   * @return list of links, or null if no matching links
    * @throws Exception
    */
   public Link[] getLinkList(String dbid, long id1, long link_type)
     throws Exception {
-    //TODO implement this method. This is not currently implemented in GraphMore.
-    return new Link[2];
+
+    //TODO test this method.
+
+    ArrayList<GraphMoreEdge> edgeList = graphDB.getEdges(id1, (int)link_type);
+    return graphMoreEdgeToLinks(edgeList);
+
   }
 
   /**
@@ -265,8 +287,7 @@ public class LinkStoreMariaDB extends GraphStore {
    * @param maxTimestamp
    * @param offset
    * @param limit
-   * @return list of links in descending order of time, or null
-   *                                       if no matching links
+   * @return list of links in order of time, or null if no matching links
    * @throws Exception
    */
   public Link[] getLinkList(String dbid, long id1, long link_type,
@@ -275,6 +296,7 @@ public class LinkStoreMariaDB extends GraphStore {
     throws Exception {
 
     //TODO implement this method. Overriding method from LinkStore, model after LinkStoreMysql
+    // Requires new method added to GraphMoreEdgeSearch.
     return new Link[2];
 
   }
@@ -289,18 +311,43 @@ public class LinkStoreMariaDB extends GraphStore {
   */
   @Override
   public long countLinks(String dbid, long id1, long link_type) throws Exception {
+
+    //TODO implement this method.
+    // requires new method added to GraphMoreEdgeSearch that returns the count of the edges
+
     return 0;
   }
 
   @Override
   public void addBulkLinks(String dbid, List<Link> links, boolean noinverse)
       throws Exception {
-    //TODO make a better implementation for bulk loading.
 
+    //TODO test this method
+
+    // Copy the list of Link objects to an ArrayList of GraphMoreEdge objects
+    ArrayList<GraphMoreEdge> edges = new ArrayList<GraphMoreEdge>(links.size());
+    for(int i = 0; i < links.size(); i++) {
+      Link e = links.get(i);
+
+      // Copy the link data payload into a byte buffer
+      ByteBuffer payloadBuf = ByteBuffer.allocate(e.data.length);
+      payloadBuf.put(e.data);
+
+      // Create a GraphMoreEdge object, and add it to the ArrayList
+      GraphMoreEdge gme = new GraphMoreEdge(-1, e.id1, e.id2, (int)e.link_type,
+                              e.visibility, e.time, payloadBuf);
+      edges.add(gme);
+    }
+
+    graphDB.edgeBulkAdd(edges);
+
+    //TODO delete this initial implementation code after testing the better implementation (commented out for now)
     // Initial implementation: call addLink for each node in the list
+    /*
     for(int i = 0; i < links.size(); i++) {
       addLink(dbid, links.get(i), noinverse);
     }
+    */
   }
 
   /**
@@ -364,7 +411,9 @@ public class LinkStoreMariaDB extends GraphStore {
    * Bulk loading to more efficiently load nodes.
    * Calling this is equivalent to calling addNode multiple times.
   *
-  * Overrides method from NodeStore. Modeled after LinkStoreMysql.
+  * Overrides method from NodeStore. Modeled after LinkStoreMysql. Node fields
+  * to be added are type, version, and data. Let id and updateTime be set
+  * automatically by the database.
   *
    * @param dbid
    * @param nodes
@@ -373,13 +422,33 @@ public class LinkStoreMariaDB extends GraphStore {
    */
   @Override
   public long[] bulkAddNodes(String dbid, List<Node> nodes) throws Exception {
-    //TODO make a better implementation for bulk loading.
 
+    //TODO test this method
+
+    // Copy the list of Node objects to an ArrayList of GraphMoreNode objects
+    ArrayList<GraphMoreNode> gmNodes = new ArrayList<GraphMoreNode>(nodes.size());
+    for(int i = 0; i < nodes.size(); i++) {
+      Node n = nodes.get(i);
+
+      // Copy the node data payload into a byte buffer
+      ByteBuffer payloadBuf = ByteBuffer.allocate(n.data.length);
+      payloadBuf.put(n.data);
+
+      GraphMoreNode gmn = new GraphMoreNode(-1, n.type, n.version, 0, payloadBuf);
+      gmNodes.add(gmn);
+    }
+
+    // Boolean parameter to nodeBulkAdd indicates that system should generate
+    // node ids
+    long[] ids = graphDB.nodeBulkAdd(gmNodes, true);
+
+    //TODO delete this initial implementation code after testing the better implementation (commented out for now)
     // Initial implementation: call addNode for each node in the list
-    long[] ids = new long[nodes.size()];
+    /*
     for(int i = 0; i < nodes.size(); i++) {
       ids[i] = addNode(dbid, nodes.get(i));
     }
+    */
 
     return ids;
   }
@@ -393,8 +462,7 @@ public class LinkStoreMariaDB extends GraphStore {
    */
   @Override
   public int bulkLoadBatchSize() {
-    //TODO implement this method.
-    return 1;
+    return bulkInsertSize;
   }
 
   /**
